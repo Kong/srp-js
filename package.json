@@ -1,5 +1,5 @@
 {
-  "name": "srp-js",
+  "name": "@getinsomnia/srp-js",
   "description": "Secure Remote Password (SRP)",
   "version": "0.3.0",
   "main": "index.js",
