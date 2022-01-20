@@ -1,4 +1,4 @@
-[![build status](https://travis-ci.org/getinsomnia/srp-js.svg)](https://travis-ci.org/getinsomnia/srp-js)
+[![Node.js CI](https://github.com/Kong/srp-js/actions/workflows/node.js.yml/badge.svg)](https://github.com/Kong/srp-js/actions/workflows/node.js.yml)
 
 # SRP
 
