@@ -3,7 +3,7 @@
 const vows = require('vows'),
       assert = require('assert'),
       bignum = require('../lib/bignum'),
-      { Buffer } = require('buffer/'),
+      { Buffer } = require('buffer'),
       srp = require('../lib/srp');
 
 /*
