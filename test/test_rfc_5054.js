@@ -3,7 +3,7 @@
 const vows = require('vows'),
       assert = require('assert'),
       srp = require('../lib/srp'),
-      { Buffer } = require('buffer/'),
+      { Buffer } = require('buffer'),
       params = srp.params['1024'];
 
 /*
