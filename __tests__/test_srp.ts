@@ -1,7 +1,7 @@
-const assert = require("assert");
-const srp = require("../lib/srp");
-const { Buffer } = require("buffer");
-const { describe, beforeAll, beforeEach, it } = require("@jest/globals");
+import * as assert from "assert";
+import * as srp from "../lib/srp";
+import { Buffer } from "node:buffer";
+import { describe, beforeAll, beforeEach, it } from "@jest/globals";
 
 const params = srp.params[4096];
 
@@ -39,13 +39,13 @@ describe("SRP", () => {
   });
 
   it("use a and b", () => {
-    client = new srp.Client(params, salt, identity, password, a);
+    client = srp.Client(params, salt, identity, password, a);
 
     // client produces A
     A = client.computeA();
 
     // create server
-    server = new srp.Server(params, verifier, b);
+    server = srp.Server(params, verifier, b);
 
     // server produces B
     B = server.computeB();
@@ -119,8 +119,8 @@ describe("SRP", () => {
   });
 
   it("server rejects wrong M1", () => {
-    var bad_client = new srp.Client(params, salt, identity, Buffer("bad"), a);
-    var server2 = new srp.Server(params, verifier, b);
+    var bad_client = srp.Client(params, salt, identity, new Buffer("bad"), a);
+    var server2 = srp.Server(params, verifier, b);
     bad_client.setB(server2.computeB());
     assert.throws(() => {
       server.checkM1(bad_client.computeM1());
@@ -132,7 +132,7 @@ describe("SRP", () => {
     // reject 2*N too, but our Buffer-length checks reject it before the
     // number itself is examined.
 
-    var server2 = new srp.Server(params, verifier, b);
+    var server2 = srp.Server(params, verifier, b);
     var Azero = new Buffer(params.N_length_bits / 8);
     Azero.fill(0);
     var AN = params.N.toBuffer();
@@ -150,7 +150,7 @@ describe("SRP", () => {
 
   it("client rejects bad B", () => {
     // server's "B" must be 1..N-1 . Reject 0 and N and N+1
-    var client2 = new srp.Client(params, salt, identity, password, a);
+    var client2 = srp.Client(params, salt, identity, password, a);
     var Bzero = new Buffer(params.N_length_bits / 8);
     Bzero.fill(0, 0, params.N_length_bits / 8);
     var BN = params.N.toBuffer();

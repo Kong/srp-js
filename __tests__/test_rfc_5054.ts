@@ -1,8 +1,8 @@
-const assert = require("assert");
-const srp = require("../lib/srp");
-const { Buffer } = require("buffer");
+import * as assert from "assert";
+import * as srp from "../lib/srp";
+import { Buffer } from "node:buffer";
+import { describe, it } from "@jest/globals";
 const params = srp.params["1024"];
-const { describe, beforeAll, beforeEach, it } = require("@jest/globals");
 
 /*
  * http://tools.ietf.org/html/rfc5054#appendix-B
@@ -10,7 +10,7 @@ const { describe, beforeAll, beforeEach, it } = require("@jest/globals");
 
 const I = new Buffer("alice");
 const P = new Buffer("password123");
-const s = Buffer("beb25379d1a8581eb5a727673a2441ee", "hex");
+const s = new Buffer("beb25379d1a8581eb5a727673a2441ee", "hex");
 const k_expected = "7556aa045aef2cdd07abaf0f665c3e818913186f";
 const x_expected = "94b7555aabe9127cc58ccf4993db6cf84d16c124";
 const v_expected = (
@@ -22,11 +22,11 @@ const v_expected = (
 )
   .split(/\s/)
   .join("");
-const a = Buffer(
+const a = new Buffer(
   "60975527035cf2ad1989806f0407210bc81edc04e2762a56afd529ddda2d4393",
   "hex"
 );
-const b = Buffer(
+const b = new Buffer(
   "e487cb59d31ac550471e81f00f6928e01dda08e974a004f49e61f5d105284d20",
   "hex"
 );
@@ -64,52 +64,49 @@ function asHex(num) {
   return num.toBuffer().toString("hex");
 }
 
-let verifier = null;
-
 describe("RFC 5054: Test vectors", () => {
-  beforeEach(() => {
-    verifier = srp.computeVerifier(params, s, I, P);
-  });
-
   it("x", () => {
-    const client = new srp.Client(params, s, I, P, a);
+    const client = srp.Client(params, s, I, P, a);
     assert.equal(asHex(client._private.x_num), x_expected);
   });
 
   it("V", () => {
+    let verifier = srp.computeVerifier(params, s, I, P);
     assert.equal(verifier.toString("hex"), v_expected);
   });
 
   it("k", () => {
-    const client = new srp.Client(params, s, I, P, a);
+    const client = srp.Client(params, s, I, P, a);
     assert.equal(asHex(client._private.k_num), k_expected);
   });
 
   it("A", () => {
-    const client = new srp.Client(params, s, I, P, a);
+    const client = srp.Client(params, s, I, P, a);
     assert.equal(client.computeA().toString("hex"), A_expected);
   });
 
   it("B", () => {
-    const server = new srp.Server(params, verifier, b);
+    let verifier = srp.computeVerifier(params, s, I, P);
+    const server = srp.Server(params, verifier, b);
     assert.equal(server.computeB().toString("hex"), B_expected);
   });
 
   it("u", () => {
-    const client = new srp.Client(params, s, I, P, a);
-    client.setB(Buffer(B_expected, "hex"));
+    const client = srp.Client(params, s, I, P, a);
+    client.setB(new Buffer(B_expected, "hex"));
     assert.equal(asHex(client._private.u_num), u_expected);
   });
 
   it("S client", () => {
-    const client = new srp.Client(params, s, I, P, a);
-    client.setB(Buffer(B_expected, "hex"));
+    const client = srp.Client(params, s, I, P, a);
+    client.setB(new Buffer(B_expected, "hex"));
     assert.equal(client._private.S_buf.toString("hex"), S_expected);
   });
 
   it("S server", () => {
-    const server = new srp.Server(params, verifier, b);
-    server.setA(Buffer(A_expected, "hex"));
+    let verifier = srp.computeVerifier(params, s, I, P);
+    const server = srp.Server(params, verifier, b);
+    server.setA(new Buffer(A_expected, "hex"));
     assert.equal(server._private.S_buf.toString("hex"), S_expected);
   });
 });

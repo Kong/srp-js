@@ -1,8 +1,7 @@
-const assert = require("assert");
-const bignum = require("../lib/bignum");
-const { Buffer } = require("buffer");
-const srp = require("../lib/srp");
-const { describe, beforeAll, beforeEach, it } = require("@jest/globals");
+import * as assert from "assert";
+import { bignum, fromBuffer } from "../lib/bignum";
+import * as srp from "../lib/srp";
+import { describe, beforeAll, beforeEach, it } from "@jest/globals";
 /*
  * Vectors from https://wiki.mozilla.org/Identity/AttachedServices/KeyServerProtocol
  *
@@ -310,19 +309,19 @@ function checkVectors(params, inputs, expected) {
     "v"
   );
 
-  var client = new srp.Client(
+  var client = srp.Client(
     params,
     inputs.salt,
     inputs.I,
     inputs.P,
     inputs.a
   );
-  var server = new srp.Server(params, expected.v, inputs.b);
+  var server = srp.Server(params, expected.v, inputs.b);
 
-  numequal(client._private.k_num, bignum.fromBuffer(expected.k), "k");
-  numequal(client._private.x_num, bignum.fromBuffer(expected.x), "x");
-  hexequal(client.computeA(), expected.A);
-  hexequal(server.computeB(), expected.B);
+  numequal(client._private.k_num, fromBuffer(expected.k), "k");
+  numequal(client._private.x_num, fromBuffer(expected.x), "x");
+  hexequal(client.computeA(), expected.A, "A");
+  hexequal(server.computeB(), expected.B, "B");
 
   assert.throws(function () {
     client.computeM1();
@@ -338,19 +337,19 @@ function checkVectors(params, inputs, expected) {
   }, /incomplete protocol/);
 
   client.setB(expected.B);
-  numequal(client._private.u_num, bignum.fromBuffer(expected.u));
-  hexequal(client._private.S_buf, expected.S);
-  hexequal(client.computeM1(), expected.M1);
-  hexequal(client.computeK(), expected.K);
+  numequal(client._private.u_num, fromBuffer(expected.u), "u");
+  hexequal(client._private.S_buf, expected.S, "S");
+  hexequal(client.computeM1(), expected.M1, "M1");
+  hexequal(client.computeK(), expected.K, "K");
 
   server.setA(expected.A);
-  numequal(server._private.u_num, bignum.fromBuffer(expected.u));
-  hexequal(server._private.S_buf, expected.S);
+  numequal(server._private.u_num, fromBuffer(expected.u), "u");
+  hexequal(server._private.S_buf, expected.S, "S");
   assert.throws(function () {
-    server.checkM1(Buffer("notM1"));
+    server.checkM1(new Buffer("notM1"));
   }, /client did not use the same password/);
   server.checkM1(expected.M1); // happy, not throwy
-  hexequal(server.computeK(), expected.K);
+  hexequal(server.computeK(), expected.K, "K");
 }
 
 describe("picl vectors", () => {

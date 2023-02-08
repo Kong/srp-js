@@ -1,15 +1,13 @@
-'use strict';
-
-const crypto = require('crypto'),
-      bignum = require('./bignum'),
-      { Buffer } = require('buffer'),
-      assert = require('assert');
+import * as crypto from "crypto";
+import { bignum, fromBuffer } from "./bignum";
+import { Buffer } from "node:buffer";
+import * as assert from "assert";
+import params from "./params";
 
 const zero = bignum(0);
 
 function assert_(val, msg) {
-  if (!val)
-    throw new Error(msg||"assertion");
+  if (!val) throw new Error(msg || "assertion");
 }
 
 /*
@@ -33,38 +31,37 @@ function padTo(n, len) {
   n.copy(result, padding);
   assert.equal(result.length, len);
   return result;
-};
+}
 
 function padToN(number, params) {
   assertIsBignum(number);
-  return padTo(number.toBuffer(), params.N_length_bits/8);
+  return padTo(number.toBuffer(), params.N_length_bits / 8);
 }
 
 function padToH(number, params) {
   assertIsBignum(number);
   var hashlen_bits;
-  if (params.hash === "sha1")
-    hashlen_bits = 160;
-  else if (params.hash === "sha256")
-    hashlen_bits = 256;
-  else if (params.hash === "sha512")
-    hashlen_bits = 512;
-  else
-    throw Error("cannot determine length of hash '"+params.hash+"'");
+  if (params.hash === "sha1") hashlen_bits = 160;
+  else if (params.hash === "sha256") hashlen_bits = 256;
+  else if (params.hash === "sha512") hashlen_bits = 512;
+  else throw Error("cannot determine length of hash '" + params.hash + "'");
 
-  return padTo(number.toBuffer(), hashlen_bits/8);
+  return padTo(number.toBuffer(), hashlen_bits / 8);
 }
 
 function assertIsBuffer(arg, argname) {
   argname = argname || "arg";
-  assert_(Buffer.isBuffer(arg), "Type error: "+argname+" must be a buffer");
+  assert_(Buffer.isBuffer(arg), "Type error: " + argname + " must be a buffer");
 }
 
 function assertIsNBuffer(arg, params, argname) {
   argname = argname || "arg";
-  assert_(Buffer.isBuffer(arg), "Type error: "+argname+" must be a buffer");
-  if (arg.length != params.N_length_bits/8)
-    assert_(false, argname+" was "+arg.length+", expected "+(params.N_length_bits/8));
+  assert_(Buffer.isBuffer(arg), "Type error: " + argname + " must be a buffer");
+  if (arg.length != params.N_length_bits / 8)
+    assert_(
+      false,
+      argname + " was " + arg.length + ", expected " + params.N_length_bits / 8
+    );
 }
 
 function assertIsBignum(arg) {
@@ -89,16 +86,16 @@ function getx(params, salt, I, P) {
   assertIsBuffer(I, "identity (I)");
   assertIsBuffer(P, "password (P)");
   var hashIP = Buffer.from(
-    crypto.createHash(params.hash)
-      .update(Buffer.concat([I, new Buffer(':'), P]))
-      .digest());
+    crypto
+      .createHash(params.hash)
+      .update(Buffer.concat([I, new Buffer(":"), P]))
+      .digest()
+  );
   var hashX = Buffer.from(
-    crypto.createHash(params.hash)
-      .update(salt)
-      .update(hashIP)
-      .digest());
-  return bignum.fromBuffer(hashX);
-};
+    crypto.createHash(params.hash).update(salt).update(hashIP).digest()
+  );
+  return fromBuffer(hashX);
+}
 
 /*
  * The verifier is calculated as described in Section 3 of [SRP-RFC].
@@ -124,7 +121,7 @@ function computeVerifier(params, salt, I, P) {
   assertIsBuffer(P, "password (P)");
   var v_num = params.g.powm(getx(params, salt, I, P), params.N);
   return padToN(v_num, params);
-};
+}
 
 /*
  * calculate the SRP-6 multiplier
@@ -140,8 +137,8 @@ function getk(params) {
     .update(padToN(params.N, params))
     .update(padToN(params.g, params))
     .digest();
-  return bignum.fromBuffer(k_buf);
-};
+  return fromBuffer(k_buf);
+}
 
 /*
  * Generate a random key
@@ -158,14 +155,14 @@ function genKey(bytes, callback) {
     callback = bytes;
     bytes = 32;
   }
-  if (typeof callback !== 'function') {
-    throw("Callback required");
+  if (typeof callback !== "function") {
+    throw "Callback required";
   }
-  crypto.randomBytes(bytes, function(err, buf) {
-    if (err) return callback (err);
+  crypto.randomBytes(bytes, function (err, buf) {
+    if (err) return callback(err);
     return callback(null, Buffer.from(buf));
   });
-};
+}
 
 /*
  * The server key exchange message also contains the server's public
@@ -189,7 +186,7 @@ function getB(params, k, v, b) {
   var N = params.N;
   var r = k.mul(v).add(params.g.powm(b, N)).mod(N);
   return padToN(r, params);
-};
+}
 
 /*
  * The client key exchange message carries the client's public value
@@ -206,11 +203,15 @@ function getB(params, k, v, b) {
  */
 function getA(params, a_num) {
   assertIsBignum(a_num);
-  if (Math.ceil(a_num.bitLength() / 8) < 256/8) {
-    console.warn("getA: client key length", a_num.bitLength(), "is less than the recommended 256");
+  if (Math.ceil(a_num.bitLength() / 8) < 256 / 8) {
+    console.warn(
+      "getA: client key length",
+      a_num.bitLength(),
+      "is less than the recommended 256"
+    );
   }
   return padToN(params.g.powm(a_num, params.N), params);
-};
+}
 
 /*
  * getu() hashes the two public messages together, to obtain a scrambling
@@ -229,11 +230,9 @@ function getA(params, a_num) {
 function getu(params, A, B) {
   assertIsNBuffer(A, params, "A");
   assertIsNBuffer(B, params, "B");
-  var u_buf = crypto.createHash(params.hash)
-    .update(A).update(B)
-    .digest();
-  return bignum.fromBuffer(u_buf);
-};
+  var u_buf = crypto.createHash(params.hash).update(A).update(B).digest();
+  return fromBuffer(u_buf);
+}
 
 /*
  * The TLS premaster secret as calculated by the client
@@ -259,9 +258,11 @@ function client_getS(params, k_num, x_num, a_num, B_num, u_num) {
   var N = params.N;
   if (zero.ge(B_num) || N.le(B_num))
     throw new Error("invalid server-supplied 'B', must be 1..N-1");
-  var S_num = B_num.sub(k_num.mul(g.powm(x_num, N))).powm(a_num.add(u_num.mul(x_num)), N).mod(N);
+  var S_num = B_num.sub(k_num.mul(g.powm(x_num, N)))
+    .powm(a_num.add(u_num.mul(x_num)), N)
+    .mod(N);
   return padToN(S_num, params);
-};
+}
 
 /*
  * The TLS premastersecret as calculated by the server
@@ -281,11 +282,12 @@ function server_getS(params, v_num, A_num, b_num, u_num) {
   assertIsBignum(b_num);
   assertIsBignum(u_num);
   var N = params.N;
+
   if (zero.ge(A_num) || N.le(A_num))
     throw new Error("invalid client-supplied 'A', must be 1..N-1");
   var S_num = A_num.mul(v_num.powm(u_num, N)).powm(b_num, N).mod(N);
   return padToN(S_num, params);
-};
+}
 
 /*
  * Compute the shared session key K from S
@@ -298,20 +300,19 @@ function server_getS(params, v_num, A_num, b_num, u_num) {
  */
 function getK(params, S_buf) {
   assertIsNBuffer(S_buf, params, "S");
-  return Buffer.from(
-    crypto.createHash(params.hash)
-      .update(S_buf)
-      .digest()
-  );
-};
+  return Buffer.from(crypto.createHash(params.hash).update(S_buf).digest());
+}
 
 function getM1(params, A_buf, B_buf, S_buf) {
   assertIsNBuffer(A_buf, params, "A");
   assertIsNBuffer(B_buf, params, "B");
   assertIsNBuffer(S_buf, params, "S");
   return Buffer.from(
-    crypto.createHash(params.hash)
-      .update(A_buf).update(B_buf).update(S_buf)
+    crypto
+      .createHash(params.hash)
+      .update(A_buf)
+      .update(B_buf)
+      .update(S_buf)
       .digest()
   );
 }
@@ -321,8 +322,11 @@ function getM2(params, A_buf, M_buf, K_buf) {
   assertIsBuffer(M_buf, "M");
   assertIsBuffer(K_buf, "K");
   return Buffer.from(
-    crypto.createHash(params.hash)
-      .update(A_buf).update(M_buf).update(K_buf)
+    crypto
+      .createHash(params.hash)
+      .update(A_buf)
+      .update(M_buf)
+      .update(K_buf)
       .digest()
   );
 }
@@ -342,16 +346,25 @@ function equal(buf1, buf2) {
 
 function Client(params, salt_buf, identity_buf, password_buf, secret1_buf) {
   if (!(this instanceof Client)) {
-    return new Client(params, salt_buf, identity_buf, password_buf, secret1_buf);
+    // @ts-expect-error - FIXME
+    return new Client(
+      params,
+      salt_buf,
+      identity_buf,
+      password_buf,
+      secret1_buf
+    );
   }
   assertIsBuffer(salt_buf, "salt (salt)");
   assertIsBuffer(identity_buf, "identity (I)");
   assertIsBuffer(password_buf, "password (P)");
   assertIsBuffer(secret1_buf, "secret1");
-  this._private = { params: params,
-                    k_num: getk(params),
-                    x_num: getx(params, salt_buf, identity_buf, password_buf),
-                    a_num: bignum.fromBuffer(secret1_buf) };
+  this._private = {
+    params: params,
+    k_num: getk(params),
+    x_num: getx(params, salt_buf, identity_buf, password_buf),
+    a_num: fromBuffer(secret1_buf)
+  };
   this._private.A_buf = getA(params, this._private.a_num);
 }
 
@@ -361,7 +374,7 @@ Client.prototype = {
   },
   setB: function setB(B_buf) {
     var p = this._private;
-    var B_num = bignum.fromBuffer(B_buf);
+    var B_num = fromBuffer(B_buf);
     var u_num = getu(p.params, p.A_buf, B_buf);
     var S_buf = client_getS(p.params, p.k_num, p.x_num, p.a_num, B_num, u_num);
     p.K_buf = getK(p.params, S_buf);
@@ -387,17 +400,24 @@ Client.prototype = {
 };
 
 function Server(params, verifier_buf, secret2_buf) {
-  if (!(this instanceof Server))  {
+  if (!(this instanceof Server)) {
+    // @ts-expect-error - FIXME
     return new Server(params, verifier_buf, secret2_buf);
   }
   assertIsBuffer(verifier_buf, "verifier");
   assertIsBuffer(secret2_buf, "secret2");
-  this._private = { params: params,
-                    k_num: getk(params),
-                    b_num: bignum.fromBuffer(secret2_buf),
-                    v_num: bignum.fromBuffer(verifier_buf) };
-  this._private.B_buf = getB(params, this._private.k_num,
-                             this._private.v_num, this._private.b_num);
+  this._private = {
+    params: params,
+    k_num: getk(params),
+    b_num: fromBuffer(secret2_buf),
+    v_num: fromBuffer(verifier_buf)
+  };
+  this._private.B_buf = getB(
+    params,
+    this._private.k_num,
+    this._private.v_num,
+    this._private.b_num
+  );
 }
 
 Server.prototype = {
@@ -406,7 +426,7 @@ Server.prototype = {
   },
   setA: function setA(A_buf) {
     var p = this._private;
-    var A_num = bignum.fromBuffer(A_buf);
+    var A_num = fromBuffer(A_buf);
     var u_num = getu(p.params, A_buf, p.B_buf);
     var S_buf = server_getS(p.params, p.v_num, A_num, p.b_num, u_num);
     p.K_buf = getK(p.params, S_buf);
@@ -429,10 +449,4 @@ Server.prototype = {
   }
 };
 
-module.exports = {
-  params: require('./params'),
-  genKey: genKey,
-  computeVerifier: computeVerifier,
-  Client: Client,
-  Server: Server
-};
+export { params, genKey, computeVerifier, Client, Server };
