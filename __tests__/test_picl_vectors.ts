@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { bignum, fromBuffer } from "../lib/bignum";
+import { BigInteger } from "../lib/bigInt";
 import * as srp from "../lib/srp";
 import { describe, beforeAll, beforeEach, it } from "@jest/globals";
 /*
@@ -15,7 +15,7 @@ function join(s) {
   return s.split(/\s/).join("");
 }
 function decimal(s) {
-  return bignum(join(s), 10).toBuffer();
+  return new BigInteger(join(s), 10).toBuffer();
 }
 function h(s) {
   return Buffer.from(join(s), "hex");
@@ -318,8 +318,8 @@ function checkVectors(params, inputs, expected) {
   );
   var server = srp.Server(params, expected.v, inputs.b);
 
-  numequal(client._private.k_num, fromBuffer(expected.k), "k");
-  numequal(client._private.x_num, fromBuffer(expected.x), "x");
+  numequal(client._private.k_num, BigInteger.fromBuffer(expected.k), "k");
+  numequal(client._private.x_num, BigInteger.fromBuffer(expected.x), "x");
   hexequal(client.computeA(), expected.A, "A");
   hexequal(server.computeB(), expected.B, "B");
 
@@ -337,13 +337,13 @@ function checkVectors(params, inputs, expected) {
   }, /incomplete protocol/);
 
   client.setB(expected.B);
-  numequal(client._private.u_num, fromBuffer(expected.u), "u");
+  numequal(client._private.u_num, BigInteger.fromBuffer(expected.u), "u");
   hexequal(client._private.S_buf, expected.S, "S");
   hexequal(client.computeM1(), expected.M1, "M1");
   hexequal(client.computeK(), expected.K, "K");
 
   server.setA(expected.A);
-  numequal(server._private.u_num, fromBuffer(expected.u), "u");
+  numequal(server._private.u_num, BigInteger.fromBuffer(expected.u), "u");
   hexequal(server._private.S_buf, expected.S, "S");
   assert.throws(function () {
     server.checkM1(Buffer.from("notM1"));

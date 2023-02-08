@@ -1,10 +1,10 @@
 import * as crypto from "crypto";
-import { bignum, fromBuffer } from "./bignum";
+import { BigInteger } from "./bigInt";
 import { Buffer } from "node:buffer";
 import * as assert from "assert";
 import params from "./params";
 
-const zero = bignum(0);
+const zero = new BigInteger(0);
 
 function assert_(val, msg) {
   if (!val) throw new Error(msg || "assertion");
@@ -94,7 +94,7 @@ function getx(params, salt, I, P) {
   var hashX = Buffer.from(
     crypto.createHash(params.hash).update(salt).update(hashIP).digest()
   );
-  return fromBuffer(hashX);
+  return BigInteger.fromBuffer(hashX);
 }
 
 /*
@@ -137,7 +137,7 @@ function getk(params) {
     .update(padToN(params.N, params))
     .update(padToN(params.g, params))
     .digest();
-  return fromBuffer(k_buf);
+  return BigInteger.fromBuffer(k_buf);
 }
 
 /*
@@ -231,7 +231,7 @@ function getu(params, A, B) {
   assertIsNBuffer(A, params, "A");
   assertIsNBuffer(B, params, "B");
   var u_buf = crypto.createHash(params.hash).update(A).update(B).digest();
-  return fromBuffer(u_buf);
+  return BigInteger.fromBuffer(u_buf);
 }
 
 /*
@@ -363,7 +363,7 @@ function Client(params, salt_buf, identity_buf, password_buf, secret1_buf) {
     params: params,
     k_num: getk(params),
     x_num: getx(params, salt_buf, identity_buf, password_buf),
-    a_num: fromBuffer(secret1_buf)
+    a_num: BigInteger.fromBuffer(secret1_buf)
   };
   this._private.A_buf = getA(params, this._private.a_num);
 }
@@ -374,7 +374,7 @@ Client.prototype = {
   },
   setB: function setB(B_buf) {
     var p = this._private;
-    var B_num = fromBuffer(B_buf);
+    var B_num = BigInteger.fromBuffer(B_buf);
     var u_num = getu(p.params, p.A_buf, B_buf);
     var S_buf = client_getS(p.params, p.k_num, p.x_num, p.a_num, B_num, u_num);
     p.K_buf = getK(p.params, S_buf);
@@ -409,8 +409,8 @@ function Server(params, verifier_buf, secret2_buf) {
   this._private = {
     params: params,
     k_num: getk(params),
-    b_num: fromBuffer(secret2_buf),
-    v_num: fromBuffer(verifier_buf)
+    b_num: BigInteger.fromBuffer(secret2_buf),
+    v_num: BigInteger.fromBuffer(verifier_buf)
   };
   this._private.B_buf = getB(
     params,
@@ -426,7 +426,7 @@ Server.prototype = {
   },
   setA: function setA(A_buf) {
     var p = this._private;
-    var A_num = fromBuffer(A_buf);
+    var A_num = BigInteger.fromBuffer(A_buf);
     var u_num = getu(p.params, A_buf, p.B_buf);
     var S_buf = server_getS(p.params, p.v_num, A_num, p.b_num, u_num);
     p.K_buf = getK(p.params, S_buf);

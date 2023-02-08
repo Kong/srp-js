@@ -1,5 +1,3 @@
-"use strict";
-
 /*
  * SRP Group Parameters
  * http://tools.ietf.org/html/rfc5054#appendix-A
@@ -16,10 +14,10 @@
 // since these are meant to be used internally, all values are numbers. If
 // you want to add parameter sets, you'll need to convert them to bignums.
 
-import { bignum } from "./bignum";
+import { BigInteger } from "./bigInt";
 
 function hex(s) {
-  return bignum(s.split(/\s/).join(""), 16);
+  return new BigInteger(s.split(/\s/).join(""), 16);
 }
 
 export default {
