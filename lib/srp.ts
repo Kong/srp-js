@@ -11,68 +11,34 @@ function invariant(condition: boolean, message?: string): asserts condition {
   }
 }
 
+type Params = {
+  N: BigInteger;
+  g: BigInteger;
+  hash: string;
+  N_length_bits: number;
+};
+
 /*
  * If a conversion is explicitly specified with the operator PAD(),
  * the integer will first be implicitly converted, then the resultant
  * byte-string will be left-padded with zeros (if necessary) until its
  * length equals the implicitly-converted length of N.
- *
- * params:
- *         n (buffer)       Number to pad
- *         len (int)        length of the resulting Buffer
- *
- * returns: buffer
  */
-function padTo(n, len) {
-  assertIsBuffer(n, "n");
-  var padding = len - n.length;
+function padTo(n: Buffer, len: number) {
+  invariant(Buffer.isBuffer(n), "Type error: n must be a buffer");
+
+  const padding = len - n.length;
   invariant(padding > -1, "Negative padding.  Very uncomfortable.");
-  var result = Buffer.alloc(len);
+  const result = Buffer.alloc(len);
   result.fill(0, 0, padding);
   n.copy(result, padding);
   invariant(result.length === len, "Padding failed");
   return result;
 }
 
-function padToN(number, params) {
-  assertIsBignum(number);
+function padToN(number: BigInteger, params: Params) {
+  invariant(number.bigNum === true);
   return padTo(number.toBuffer(), params.N_length_bits / 8);
-}
-
-function padToH(number, params) {
-  assertIsBignum(number);
-  var hashlen_bits;
-  if (params.hash === "sha1") hashlen_bits = 160;
-  else if (params.hash === "sha256") hashlen_bits = 256;
-  else if (params.hash === "sha512") hashlen_bits = 512;
-  else throw Error("cannot determine length of hash '" + params.hash + "'");
-
-  return padTo(number.toBuffer(), hashlen_bits / 8);
-}
-
-function assertIsBuffer(arg, argname) {
-  argname = argname || "arg";
-  invariant(
-    Buffer.isBuffer(arg),
-    "Type error: " + argname + " must be a buffer"
-  );
-}
-
-function assertIsNBuffer(arg, params, argname) {
-  argname = argname || "arg";
-  invariant(
-    Buffer.isBuffer(arg),
-    "Type error: " + argname + " must be a buffer"
-  );
-  if (arg.length != params.N_length_bits / 8)
-    invariant(
-      false,
-      argname + " was " + arg.length + ", expected " + params.N_length_bits / 8
-    );
-}
-
-function assertIsBignum(arg) {
-  invariant(arg.bigNum === true);
 }
 
 /*
@@ -80,27 +46,23 @@ function assertIsBignum(arg) {
  * salt, identity, and password.  And a colon.  FOUR buffers.
  *
  *      x = H(s | H(I | ":" | P))
- *
- * params:
- *         salt (buffer)    salt
- *         I (buffer)       user identity
- *         P (buffer)       user password
- *
- * returns: x (bignum)      user secret
  */
-function getx(params, salt, I, P) {
-  assertIsBuffer(salt, "salt (salt)");
-  assertIsBuffer(I, "identity (I)");
-  assertIsBuffer(P, "password (P)");
-  var hashIP = Buffer.from(
+function getx(params: Params, salt: Buffer, I: Buffer, P: Buffer) {
+  invariant(Buffer.isBuffer(salt), "Type error: salt (salt) must be a buffer");
+  invariant(Buffer.isBuffer(I), "Type error: identity (I) must be a buffer");
+  invariant(Buffer.isBuffer(P), "Type error: password (P) must be a buffer");
+
+  const hashIP = Buffer.from(
     crypto
       .createHash(params.hash)
       .update(Buffer.concat([I, Buffer.from(":"), P]))
       .digest()
   );
-  var hashX = Buffer.from(
+
+  const hashX = Buffer.from(
     crypto.createHash(params.hash).update(salt).update(hashIP).digest()
   );
+
   return BigInteger.fromBuffer(hashX);
 }
 
@@ -113,33 +75,21 @@ function getx(params, salt, I, P) {
  *
  *         x = H(s | H(I | ":" | P))
  *         v = g^x % N
- *
- * params:
- *         params (obj)     group parameters, with .N, .g, .hash
- *         salt (buffer)    salt
- *         I (buffer)       user identity
- *         P (buffer)       user password
- *
- * returns: buffer
  */
-function computeVerifier(params, salt, I, P) {
-  assertIsBuffer(salt, "salt (salt)");
-  assertIsBuffer(I, "identity (I)");
-  assertIsBuffer(P, "password (P)");
-  var v_num = params.g.powm(getx(params, salt, I, P), params.N);
+function computeVerifier(params: Params, salt: Buffer, I: Buffer, P: Buffer) {
+  invariant(Buffer.isBuffer(salt), "Type error: salt (salt) must be a buffer");
+  invariant(Buffer.isBuffer(I), "Type error: identity (I) must be a buffer");
+  invariant(Buffer.isBuffer(P), "Type error: password (P) must be a buffer");
+
+  const v_num = params.g.powm(getx(params, salt, I, P), params.N);
   return padToN(v_num, params);
 }
 
 /*
- * calculate the SRP-6 multiplier
- *
- * params:
- *         params (obj)     group parameters, with .N, .g, .hash
- *
- * returns: bignum
+ * Calculate the SRP-6 multiplier
  */
-function getk(params) {
-  var k_buf = crypto
+function getk(params: Params) {
+  const k_buf = crypto
     .createHash(params.hash)
     .update(padToN(params.N, params))
     .update(padToN(params.g, params))
@@ -149,25 +99,16 @@ function getk(params) {
 
 /*
  * Generate a random key
- *
- * params:
- *         bytes (int)      length of key (default=32)
- *         callback (func)  function to call with err,key
- *
- * returns: nothing, but runs callback with a Buffer
  */
-function genKey(bytes, callback) {
-  // bytes is optional
-  if (arguments.length < 2) {
-    callback = bytes;
-    bytes = 32;
-  }
-  if (typeof callback !== "function") {
-    throw "Callback required";
-  }
-  crypto.randomBytes(bytes, function (err, buf) {
-    if (err) return callback(err);
-    return callback(null, Buffer.from(buf));
+async function genKey(bytes = 32) {
+  return new Promise<Buffer>((resolve, reject) => {
+    crypto.randomBytes(bytes, function (err, buf) {
+      if (err) {
+        reject(err);
+      }
+
+      resolve(Buffer.from(buf));
+    });
   });
 }
 
@@ -186,10 +127,11 @@ function genKey(bytes, callback) {
  *
  * returns: B (buffer)      the server public message
  */
-function getB(params, k, v, b) {
-  assertIsBignum(v);
-  assertIsBignum(k);
-  assertIsBignum(b);
+function getB(params: Params, k: BigInteger, v: BigInteger, b: BigInteger) {
+  invariant(v.bigNum === true);
+  invariant(k.bigNum === true);
+  invariant(b.bigNum === true);
+
   var N = params.N;
   var r = k.mul(v).add(params.g.powm(b, N)).mod(N);
   return padToN(r, params);
@@ -208,8 +150,9 @@ function getB(params, k, v, b) {
  *
  * returns A (bignum)       the client public message
  */
-function getA(params, a_num) {
-  assertIsBignum(a_num);
+function getA(params: Params, a_num: BigInteger) {
+  invariant(a_num.bigNum === true);
+
   if (Math.ceil(a_num.bitLength() / 8) < 256 / 8) {
     console.warn(
       "getA: client key length",
@@ -234,10 +177,19 @@ function getA(params, a_num) {
  *
  * returns: u (bignum)      shared scrambling parameter
  */
-function getu(params, A, B) {
-  assertIsNBuffer(A, params, "A");
-  assertIsNBuffer(B, params, "B");
-  var u_buf = crypto.createHash(params.hash).update(A).update(B).digest();
+function getu(params: Params, A: Buffer, B: Buffer) {
+  invariant(Buffer.isBuffer(A), "Type error: A must be a buffer");
+  invariant(
+    A.length === params.N_length_bits / 8,
+    "A was " + A.length + ", expected " + params.N_length_bits / 8
+  );
+  invariant(Buffer.isBuffer(B), "Type error: B must be a buffer");
+  invariant(
+    B.length === params.N_length_bits / 8,
+    "B was " + B.length + ", expected " + params.N_length_bits / 8
+  );
+
+  const u_buf = crypto.createHash(params.hash).update(A).update(B).digest();
   return BigInteger.fromBuffer(u_buf);
 }
 
@@ -255,17 +207,26 @@ function getu(params, A, B) {
  * returns: buffer
  */
 
-function client_getS(params, k_num, x_num, a_num, B_num, u_num) {
-  assertIsBignum(k_num);
-  assertIsBignum(x_num);
-  assertIsBignum(a_num);
-  assertIsBignum(B_num);
-  assertIsBignum(u_num);
-  var g = params.g;
-  var N = params.N;
-  if (zero.ge(B_num) || N.le(B_num))
+function client_getS(
+  params: Params,
+  k_num: BigInteger,
+  x_num: BigInteger,
+  a_num: BigInteger,
+  B_num: BigInteger,
+  u_num: BigInteger
+) {
+  invariant(k_num.bigNum === true);
+  invariant(x_num.bigNum === true);
+  invariant(a_num.bigNum === true);
+  invariant(B_num.bigNum === true);
+  invariant(u_num.bigNum === true);
+
+  const { g, N } = params;
+
+  if (zero.ge(B_num) || N.le(B_num)) {
     throw new Error("invalid server-supplied 'B', must be 1..N-1");
-  var S_num = B_num.sub(k_num.mul(g.powm(x_num, N)))
+  }
+  const S_num = B_num.sub(k_num.mul(g.powm(x_num, N)))
     .powm(a_num.add(u_num.mul(x_num)), N)
     .mod(N);
   return padToN(S_num, params);
@@ -273,22 +234,20 @@ function client_getS(params, k_num, x_num, a_num, B_num, u_num) {
 
 /*
  * The TLS premastersecret as calculated by the server
- *
- * params:
- *         params (obj)     group parameters, with .N, .g, .hash
- *         v (bignum)       verifier (stored on server)
- *         A (bignum)       ephemeral client public key (read from client)
- *         b (bignum)       server ephemeral private key (generated for session)
- *
- * returns: bignum
  */
+function server_getS(
+  params: Params,
+  v_num: BigInteger,
+  A_num: BigInteger,
+  b_num: BigInteger,
+  u_num: BigInteger
+) {
+  invariant(v_num.bigNum === true);
+  invariant(A_num.bigNum === true);
+  invariant(b_num.bigNum === true);
+  invariant(u_num.bigNum === true);
 
-function server_getS(params, v_num, A_num, b_num, u_num) {
-  assertIsBignum(v_num);
-  assertIsBignum(A_num);
-  assertIsBignum(b_num);
-  assertIsBignum(u_num);
-  var N = params.N;
+  const { N } = params;
 
   if (zero.ge(A_num) || N.le(A_num))
     throw new Error("invalid client-supplied 'A', must be 1..N-1");
@@ -305,15 +264,35 @@ function server_getS(params, v_num, A_num, b_num, u_num) {
  *
  * returns: buffer
  */
-function getK(params, S_buf) {
-  assertIsNBuffer(S_buf, params, "S");
+function getK(params: Params, S_buf: Buffer) {
+  invariant(Buffer.isBuffer(S_buf), "Type error: S must be a buffer");
+  invariant(
+    S_buf.length === params.N_length_bits / 8,
+    "S was " + S_buf.length + ", expected " + params.N_length_bits / 8
+  );
+
   return Buffer.from(crypto.createHash(params.hash).update(S_buf).digest());
 }
 
-function getM1(params, A_buf, B_buf, S_buf) {
-  assertIsNBuffer(A_buf, params, "A");
-  assertIsNBuffer(B_buf, params, "B");
-  assertIsNBuffer(S_buf, params, "S");
+function getM1(params: Params, A_buf: Buffer, B_buf: Buffer, S_buf: Buffer) {
+  invariant(Buffer.isBuffer(A_buf), "Type error: A must be a buffer");
+  invariant(
+    A_buf.length === params.N_length_bits / 8,
+    "A was " + A_buf.length + ", expected " + params.N_length_bits / 8
+  );
+
+  invariant(Buffer.isBuffer(B_buf), "Type error: B must be a buffer");
+  invariant(
+    B_buf.length === params.N_length_bits / 8,
+    "B was " + B_buf.length + ", expected " + params.N_length_bits / 8
+  );
+
+  invariant(Buffer.isBuffer(S_buf), "Type error: S must be a buffer");
+  invariant(
+    S_buf.length === params.N_length_bits / 8,
+    "S was " + S_buf.length + ", expected " + params.N_length_bits / 8
+  );
+
   return Buffer.from(
     crypto
       .createHash(params.hash)
@@ -324,10 +303,15 @@ function getM1(params, A_buf, B_buf, S_buf) {
   );
 }
 
-function getM2(params, A_buf, M_buf, K_buf) {
-  assertIsNBuffer(A_buf, params, "A");
-  assertIsBuffer(M_buf, "M");
-  assertIsBuffer(K_buf, "K");
+function getM2(params: Params, A_buf: Buffer, M_buf: Buffer, K_buf: Buffer) {
+  invariant(Buffer.isBuffer(A_buf), "Type error: A must be a buffer");
+  invariant(
+    A_buf.length === params.N_length_bits / 8,
+    "A was " + A_buf.length + ", expected " + params.N_length_bits / 8
+  );
+  invariant(Buffer.isBuffer(M_buf), "Type error: M must be a buffer");
+  invariant(Buffer.isBuffer(K_buf), "Type error: K must be a buffer");
+
   return Buffer.from(
     crypto
       .createHash(params.hash)
@@ -338,7 +322,7 @@ function getM2(params, A_buf, M_buf, K_buf) {
   );
 }
 
-function equal(buf1, buf2) {
+function equal(buf1: Buffer, buf2: Buffer) {
   // constant-time comparison. A drop in the ocean compared to our
   // non-constant-time modexp operations, but still good practice.
   var mismatch = buf1.length - buf2.length;
@@ -351,7 +335,13 @@ function equal(buf1, buf2) {
   return mismatch === 0;
 }
 
-function Client(params, salt_buf, identity_buf, password_buf, secret1_buf) {
+function Client(
+  params: Params,
+  salt_buf: Buffer,
+  identity_buf: Buffer,
+  password_buf: Buffer,
+  secret1_buf: Buffer
+) {
   if (!(this instanceof Client)) {
     // @ts-expect-error - FIXME
     return new Client(
@@ -362,10 +352,24 @@ function Client(params, salt_buf, identity_buf, password_buf, secret1_buf) {
       secret1_buf
     );
   }
-  assertIsBuffer(salt_buf, "salt (salt)");
-  assertIsBuffer(identity_buf, "identity (I)");
-  assertIsBuffer(password_buf, "password (P)");
-  assertIsBuffer(secret1_buf, "secret1");
+
+  invariant(
+    Buffer.isBuffer(salt_buf),
+    "Type error: salt (salt) must be a buffer"
+  );
+  invariant(
+    Buffer.isBuffer(identity_buf),
+    "Type error: identity (I) must be a buffer"
+  );
+  invariant(
+    Buffer.isBuffer(password_buf),
+    "Type error: password (P) must be a buffer"
+  );
+  invariant(
+    Buffer.isBuffer(secret1_buf),
+    "Type error: secret1 must be a buffer"
+  );
+
   this._private = {
     params: params,
     k_num: getk(params),
@@ -406,13 +410,21 @@ Client.prototype = {
   }
 };
 
-function Server(params, verifier_buf, secret2_buf) {
+function Server(params: Params, verifier_buf: Buffer, secret2_buf: Buffer) {
   if (!(this instanceof Server)) {
     // @ts-expect-error - FIXME
     return new Server(params, verifier_buf, secret2_buf);
   }
-  assertIsBuffer(verifier_buf, "verifier");
-  assertIsBuffer(secret2_buf, "secret2");
+
+  invariant(
+    Buffer.isBuffer(verifier_buf),
+    "Type error: verifier must be a buffer"
+  );
+  invariant(
+    Buffer.isBuffer(secret2_buf),
+    "Type error: secret2 must be a buffer"
+  );
+
   this._private = {
     params: params,
     k_num: getk(params),
@@ -442,7 +454,7 @@ Server.prototype = {
     p.u_num = u_num; // only for tests
     p.S_buf = S_buf; // only for tests
   },
-  checkM1: function checkM1(clientM1_buf) {
+  checkM1: function checkM1(clientM1_buf: Buffer) {
     if (this._private.M1_buf === undefined)
       throw new Error("incomplete protocol");
     if (!equal(this._private.M1_buf, clientM1_buf))

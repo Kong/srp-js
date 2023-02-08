@@ -26,16 +26,9 @@ describe("SRP", () => {
     );
   });
 
-  beforeEach((done) => {
-    srp.genKey(64, function (err, key) {
-      assert(err === null);
-      a = key;
-      srp.genKey(32, function (err, key) {
-        assert(err === null);
-        b = key;
-        done();
-      });
-    });
+  beforeEach(async () => {
+    a = await srp.genKey(64);
+    b = await srp.genKey(32);
   });
 
   it("use a and b", () => {

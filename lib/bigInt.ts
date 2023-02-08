@@ -18,7 +18,9 @@ export class BigInteger extends _BigInteger {
 
     return Buffer.from(h, "hex");
   }
-
+  bitLength() {
+    return super.bitLength();
+  }
   oldAdd: (n: BigInteger) => BigInteger;
   mod(n: BigInteger) {
     return this.ensureBI(super.mod(this.ensureBI(n)));
