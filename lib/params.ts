@@ -16,11 +16,11 @@
 
 import { BigInteger } from "./bigInt";
 
-function hex(s) {
+function hex(s: string) {
   return new BigInteger(s.split(/\s/).join(""), 16);
 }
 
-export default {
+const params = {
   1024: {
     N_length_bits: 1024,
     N: hex(
@@ -197,3 +197,5 @@ export default {
     hash: "sha256"
   }
 };
+
+export default params;

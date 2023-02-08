@@ -1,13 +1,14 @@
 import * as crypto from "crypto";
 import { BigInteger } from "./bigInt";
 import { Buffer } from "node:buffer";
-import * as assert from "assert";
 import params from "./params";
 
 const zero = new BigInteger(0);
 
-function assert_(val, msg) {
-  if (!val) throw new Error(msg || "assertion");
+function invariant(condition: boolean, message?: string): asserts condition {
+  if (!condition) {
+    throw new Error(message);
+  }
 }
 
 /*
@@ -25,11 +26,11 @@ function assert_(val, msg) {
 function padTo(n, len) {
   assertIsBuffer(n, "n");
   var padding = len - n.length;
-  assert_(padding > -1, "Negative padding.  Very uncomfortable.");
+  invariant(padding > -1, "Negative padding.  Very uncomfortable.");
   var result = Buffer.alloc(len);
   result.fill(0, 0, padding);
   n.copy(result, padding);
-  assert.equal(result.length, len);
+  invariant(result.length === len, "Padding failed");
   return result;
 }
 
@@ -51,21 +52,27 @@ function padToH(number, params) {
 
 function assertIsBuffer(arg, argname) {
   argname = argname || "arg";
-  assert_(Buffer.isBuffer(arg), "Type error: " + argname + " must be a buffer");
+  invariant(
+    Buffer.isBuffer(arg),
+    "Type error: " + argname + " must be a buffer"
+  );
 }
 
 function assertIsNBuffer(arg, params, argname) {
   argname = argname || "arg";
-  assert_(Buffer.isBuffer(arg), "Type error: " + argname + " must be a buffer");
+  invariant(
+    Buffer.isBuffer(arg),
+    "Type error: " + argname + " must be a buffer"
+  );
   if (arg.length != params.N_length_bits / 8)
-    assert_(
+    invariant(
       false,
       argname + " was " + arg.length + ", expected " + params.N_length_bits / 8
     );
 }
 
 function assertIsBignum(arg) {
-  assert.equal(arg.bigNum, true);
+  invariant(arg.bigNum === true);
 }
 
 /*

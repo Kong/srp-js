@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import * as srp from "../lib/srp";
+import * as srp from "../srp";
 import { Buffer } from "node:buffer";
 import { describe, it } from "@jest/globals";
 const params = srp.params["1024"];

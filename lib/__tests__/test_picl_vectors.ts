@@ -1,6 +1,6 @@
 import * as assert from "assert";
-import { BigInteger } from "../lib/bigInt";
-import * as srp from "../lib/srp";
+import { BigInteger } from "../bigInt";
+import * as srp from "../srp";
 import { describe, beforeAll, beforeEach, it } from "@jest/globals";
 /*
  * Vectors from https://wiki.mozilla.org/Identity/AttachedServices/KeyServerProtocol

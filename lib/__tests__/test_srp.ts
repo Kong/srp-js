@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import * as srp from "../lib/srp";
+import * as srp from "../srp";
 import { Buffer } from "node:buffer";
 import { describe, beforeAll, beforeEach, it } from "@jest/globals";
 
