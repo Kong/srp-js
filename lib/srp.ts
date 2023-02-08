@@ -26,7 +26,7 @@ function padTo(n, len) {
   assertIsBuffer(n, "n");
   var padding = len - n.length;
   assert_(padding > -1, "Negative padding.  Very uncomfortable.");
-  var result = new Buffer(len);
+  var result = Buffer.alloc(len);
   result.fill(0, 0, padding);
   n.copy(result, padding);
   assert.equal(result.length, len);
@@ -88,7 +88,7 @@ function getx(params, salt, I, P) {
   var hashIP = Buffer.from(
     crypto
       .createHash(params.hash)
-      .update(Buffer.concat([I, new Buffer(":"), P]))
+      .update(Buffer.concat([I, Buffer.from(":"), P]))
       .digest()
   );
   var hashX = Buffer.from(

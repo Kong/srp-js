@@ -5,9 +5,9 @@ import { describe, beforeAll, beforeEach, it } from "@jest/globals";
 
 const params = srp.params[4096];
 
-const salt = new Buffer("salty");
-const identity = new Buffer("alice");
-const password = new Buffer("password123");
+const salt = Buffer.from("salty");
+const identity = Buffer.from("alice");
+const password = Buffer.from("password123");
 
 assert(params, "missing parameters");
 
@@ -119,7 +119,7 @@ describe("SRP", () => {
   });
 
   it("server rejects wrong M1", () => {
-    var bad_client = srp.Client(params, salt, identity, new Buffer("bad"), a);
+    var bad_client = srp.Client(params, salt, identity, Buffer.from("bad"), a);
     var server2 = srp.Server(params, verifier, b);
     bad_client.setB(server2.computeB());
     assert.throws(() => {
@@ -133,7 +133,7 @@ describe("SRP", () => {
     // number itself is examined.
 
     var server2 = srp.Server(params, verifier, b);
-    var Azero = new Buffer(params.N_length_bits / 8);
+    var Azero = Buffer.alloc(params.N_length_bits / 8);
     Azero.fill(0);
     var AN = params.N.toBuffer();
     var AN1 = params.N.add(1).toBuffer();
@@ -151,7 +151,7 @@ describe("SRP", () => {
   it("client rejects bad B", () => {
     // server's "B" must be 1..N-1 . Reject 0 and N and N+1
     var client2 = srp.Client(params, salt, identity, password, a);
-    var Bzero = new Buffer(params.N_length_bits / 8);
+    var Bzero = Buffer.alloc(params.N_length_bits / 8);
     Bzero.fill(0, 0, params.N_length_bits / 8);
     var BN = params.N.toBuffer();
     var BN1 = params.N.add(1).toBuffer();

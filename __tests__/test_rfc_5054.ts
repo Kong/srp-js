@@ -8,9 +8,9 @@ const params = srp.params["1024"];
  * http://tools.ietf.org/html/rfc5054#appendix-B
  */
 
-const I = new Buffer("alice");
-const P = new Buffer("password123");
-const s = new Buffer("beb25379d1a8581eb5a727673a2441ee", "hex");
+const I = Buffer.from("alice");
+const P = Buffer.from("password123");
+const s = Buffer.from("beb25379d1a8581eb5a727673a2441ee", "hex");
 const k_expected = "7556aa045aef2cdd07abaf0f665c3e818913186f";
 const x_expected = "94b7555aabe9127cc58ccf4993db6cf84d16c124";
 const v_expected = (
@@ -22,11 +22,11 @@ const v_expected = (
 )
   .split(/\s/)
   .join("");
-const a = new Buffer(
+const a = Buffer.from(
   "60975527035cf2ad1989806f0407210bc81edc04e2762a56afd529ddda2d4393",
   "hex"
 );
-const b = new Buffer(
+const b = Buffer.from(
   "e487cb59d31ac550471e81f00f6928e01dda08e974a004f49e61f5d105284d20",
   "hex"
 );
@@ -93,20 +93,20 @@ describe("RFC 5054: Test vectors", () => {
 
   it("u", () => {
     const client = srp.Client(params, s, I, P, a);
-    client.setB(new Buffer(B_expected, "hex"));
+    client.setB(Buffer.from(B_expected, "hex"));
     assert.equal(asHex(client._private.u_num), u_expected);
   });
 
   it("S client", () => {
     const client = srp.Client(params, s, I, P, a);
-    client.setB(new Buffer(B_expected, "hex"));
+    client.setB(Buffer.from(B_expected, "hex"));
     assert.equal(client._private.S_buf.toString("hex"), S_expected);
   });
 
   it("S server", () => {
     let verifier = srp.computeVerifier(params, s, I, P);
     const server = srp.Server(params, verifier, b);
-    server.setA(new Buffer(A_expected, "hex"));
+    server.setA(Buffer.from(A_expected, "hex"));
     assert.equal(server._private.S_buf.toString("hex"), S_expected);
   });
 });

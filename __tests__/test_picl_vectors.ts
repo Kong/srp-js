@@ -18,7 +18,7 @@ function decimal(s) {
   return bignum(join(s), 10).toBuffer();
 }
 function h(s) {
-  return new Buffer(join(s), "hex");
+  return Buffer.from(join(s), "hex");
 }
 
 const params = srp.params["2048"];
@@ -29,7 +29,7 @@ const params = srp.params["2048"];
  */
 
 const inputs_1 = {
-  I: new Buffer("andré@example.org", "utf8"),
+  I: Buffer.from("andré@example.org", "utf8"),
   P: h("00f9b71800ab5337 d51177d8fbc682a3 653fa6dae5b87628 eeec43a18af59a9d"),
   salt: h("00f1000000000000000000000000000000000000000000000000000000000179"),
   // a and b are usually random. For testing, we force them to specific values.
@@ -300,7 +300,7 @@ function numequal(a, b, msg) {
 function checkVectors(params, inputs, expected) {
   hexequal(
     inputs.I,
-    new Buffer("616e6472c3a9406578616d706c652e6f7267", "hex"),
+    Buffer.from("616e6472c3a9406578616d706c652e6f7267", "hex"),
     "I"
   );
   hexequal(
@@ -346,7 +346,7 @@ function checkVectors(params, inputs, expected) {
   numequal(server._private.u_num, fromBuffer(expected.u), "u");
   hexequal(server._private.S_buf, expected.S, "S");
   assert.throws(function () {
-    server.checkM1(new Buffer("notM1"));
+    server.checkM1(Buffer.from("notM1"));
   }, /client did not use the same password/);
   server.checkM1(expected.M1); // happy, not throwy
   hexequal(server.computeK(), expected.K, "K");

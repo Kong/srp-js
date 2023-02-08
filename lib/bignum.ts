@@ -10,7 +10,7 @@ BigInteger.prototype.toBuffer = function () {
     h = "0" + h;
   }
 
-  return new Buffer(h, "hex");
+  return Buffer.from(h, "hex");
 };
 
 function ensureBI(n) {
