@@ -1,7 +1,7 @@
 'use strict';
 
-const params = require('../lib/params'),
-      srp = require('../lib/srp'),
+const params = require('./lib/params'),
+      srp = require('./lib/srp'),
       { Buffer } = require('buffer'),
       s = new Buffer("salty"),
       I = new Buffer("alice"),
