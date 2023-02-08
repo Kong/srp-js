@@ -119,13 +119,6 @@ async function genKey(bytes = 32) {
  * and k = H(N | PAD(g)).
  *
  * Note: as the tests imply, the entire expression is mod N.
- *
- * params:
- *         params (obj)     group parameters, with .N, .g, .hash
- *         v (bignum)       verifier (stored)
- *         b (bignum)       server secret exponent
- *
- * returns: B (buffer)      the server public message
  */
 function getB(params: Params, k: BigInteger, v: BigInteger, b: BigInteger) {
   invariant(v.bigNum === true);
@@ -143,12 +136,6 @@ function getB(params: Params, k: BigInteger, v: BigInteger, b: BigInteger) {
  * random number that SHOULD be at least 256 bits in length.
  *
  * Note: for this implementation, we take that to mean 256/8 bytes.
- *
- * params:
- *         params (obj)     group parameters, with .N, .g, .hash
- *         a (bignum)       client secret exponent
- *
- * returns A (bignum)       the client public message
  */
 function getA(params: Params, a_num: BigInteger) {
   invariant(a_num.bigNum === true);
@@ -169,13 +156,6 @@ function getA(params: Params, a_num: BigInteger) {
  * This makes it safe to use the message ordering defined in the SRP-6a
  * paper, in which the server reveals their "B" value before the client
  * commits to their "A" value.
- *
- * params:
- *         params (obj)     group parameters, with .N, .g, .hash
- *         A (Buffer)       client ephemeral public key
- *         B (Buffer)       server ephemeral public key
- *
- * returns: u (bignum)      shared scrambling parameter
  */
 function getu(params: Params, A: Buffer, B: Buffer) {
   invariant(Buffer.isBuffer(A), "Type error: A must be a buffer");
@@ -195,16 +175,6 @@ function getu(params: Params, A: Buffer, B: Buffer) {
 
 /*
  * The TLS premaster secret as calculated by the client
- *
- * params:
- *         params (obj)     group parameters, with .N, .g, .hash
- *         salt (buffer)    salt (read from server)
- *         I (buffer)       user identity (read from user)
- *         P (buffer)       user password (read from user)
- *         a (bignum)       ephemeral private key (generated for session)
- *         B (bignum)       server ephemeral public key (read from server)
- *
- * returns: buffer
  */
 
 function client_getS(
@@ -251,18 +221,12 @@ function server_getS(
 
   if (zero.ge(A_num) || N.le(A_num))
     throw new Error("invalid client-supplied 'A', must be 1..N-1");
-  var S_num = A_num.mul(v_num.powm(u_num, N)).powm(b_num, N).mod(N);
+  const S_num = A_num.mul(v_num.powm(u_num, N)).powm(b_num, N).mod(N);
   return padToN(S_num, params);
 }
 
 /*
  * Compute the shared session key K from S
- *
- * params:
- *         params (obj)     group parameters, with .N, .g, .hash
- *         S (buffer)       Session key
- *
- * returns: buffer
  */
 function getK(params: Params, S_buf: Buffer) {
   invariant(Buffer.isBuffer(S_buf), "Type error: S must be a buffer");
@@ -323,7 +287,7 @@ function getM2(params: Params, A_buf: Buffer, M_buf: Buffer, K_buf: Buffer) {
 }
 
 function equal(buf1: Buffer, buf2: Buffer) {
-  // constant-time comparison. A drop in the ocean compared to our
+  // Constant-time comparison. A drop in the ocean compared to our
   // non-constant-time modexp operations, but still good practice.
   var mismatch = buf1.length - buf2.length;
   if (mismatch) {
@@ -399,7 +363,7 @@ Client.prototype = {
       throw new Error("incomplete protocol");
     return this._private.M1_buf;
   },
-  checkM2: function checkM2(serverM2_buf) {
+  checkM2: function checkM2(serverM2_buf: Buffer) {
     if (!equal(this._private.M2_buf, serverM2_buf))
       throw new Error("server is not authentic");
   },
@@ -443,7 +407,7 @@ Server.prototype = {
   computeB: function computeB() {
     return this._private.B_buf;
   },
-  setA: function setA(A_buf) {
+  setA: function setA(A_buf: Buffer) {
     var p = this._private;
     var A_num = BigInteger.fromBuffer(A_buf);
     var u_num = getu(p.params, A_buf, p.B_buf);
