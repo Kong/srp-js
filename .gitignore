@@ -4,7 +4,7 @@
 *.swo
 
 # other stuff
-.DS_Store?
+.DS_Store
 
 # locally installed node modules
 node_modules
