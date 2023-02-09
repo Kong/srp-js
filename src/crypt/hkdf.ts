@@ -4,7 +4,7 @@ import process from 'process';
 import { Buffer } from 'buffer';
 
 function zeros(length: number) {
-  var buf = Buffer.alloc(length);
+  let buf = Buffer.alloc(length);
 
   buf.fill(0);
 
@@ -37,7 +37,7 @@ export class HKDF {
   derive(info: Buffer | crypto.BinaryLike, size: number, cb: { (buffer: Buffer): void; (arg0: any): void; }) {
     let prev = Buffer.alloc(0);
     let output: Buffer;
-    const buffers = [];
+    const buffers: Buffer[] = [];
     const num_blocks = Math.ceil(size / this.hashLength);
     info = Buffer.from(info.toString());
 

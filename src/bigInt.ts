@@ -1,5 +1,6 @@
 import { Buffer } from "buffer";
 import { BigInteger as _BigInteger } from "jsbn";
+
 export class BigInteger extends _BigInteger {
   bigNum = true;
 
@@ -20,10 +21,10 @@ export class BigInteger extends _BigInteger {
   bitLength() {
     return super.bitLength();
   }
-  mod(n: BigInteger) {
+  mod(n: BigInteger | _BigInteger | number): BigInteger {
     return this.ensureBI(super.mod(this.ensureBI(n)));
   }
-  add(n: BigInteger | number) {
+  add(n: BigInteger | _BigInteger | number): BigInteger {
     return this.ensureBI(super.add(this.ensureBI(n)));
   }
   mul(n: BigInteger) {
@@ -36,7 +37,7 @@ export class BigInteger extends _BigInteger {
     return this.ensureBI(super.modPow(this.ensureBI(n), this.ensureBI(m)));
   }
   eq(n: BigInteger) {
-    return this.ensureBI(super.equals(this.ensureBI(n)));
+    return super.equals(this.ensureBI(n));
   }
   ge(n: BigInteger) {
     return super.compareTo(n) >= 0;
@@ -48,7 +49,7 @@ export class BigInteger extends _BigInteger {
     const hex = buffer.toString("hex");
     return new BigInteger(hex, 16);
   }
-  ensureBI(n: BigInteger | _BigInteger | number) {
+  ensureBI(n: BigInteger | _BigInteger | number): BigInteger {
     if (n && typeof n === "object" && "bigNum" in n && n.bigNum) {
       return n as BigInteger;
     }
@@ -56,5 +57,3 @@ export class BigInteger extends _BigInteger {
     return new BigInteger(n.toString());
   }
 }
-
-// export { bignum, fromBuffer };

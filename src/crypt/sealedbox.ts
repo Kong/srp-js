@@ -5,7 +5,6 @@
 // only tweetnacl's nacl.box.* namespace, and blakejs for the nonce generation.
 // The ephemeral public key is prepended to a sealed box, so only the recipient
 // keypair is needed for opening - the ephemeral private key is just discarded.
-
 import { box as naclBox } from 'tweetnacl';
 import { blake2b } from 'blakejs';
 

@@ -1,5 +1,5 @@
-import { describe, expect, it } from '@jest/globals';
-import buffer from 'buffer';
+import { describe, expect, it } from 'vitest';
+import { Buffer } from 'buffer';
 
 import {encryptAES, decryptAES, deriveKey, decryptRSAWithJWK, encryptRSAWithJWK, decryptAESToBuffer, encryptAESBuffer} from '../crypt';
 
@@ -36,7 +36,7 @@ describe('crypt', () => {
         key_ops: ['encrypt', 'decrypt'],
         k: '5hs1f2xuiNPHUp11i6SWlsqYpWe_hWPcEKucZlwBfFE',
       };
-      const source = buffer.Buffer.from('Hello World!', 'utf8');
+      const source = Buffer.from('Hello World!', 'utf8');
       const resultEncrypted = encryptAESBuffer(key, source);
       const resultDecrypted = decryptAESToBuffer(key, resultEncrypted);
       expect(resultDecrypted.toString()).toEqual(source.toString());

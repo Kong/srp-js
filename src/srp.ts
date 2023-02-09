@@ -1,6 +1,6 @@
 import * as crypto from "crypto";
 import { BigInteger } from "./bigInt";
-import { Buffer } from "node:buffer";
+import { Buffer } from "buffer";
 
 const zero = new BigInteger(0);
 
@@ -376,7 +376,7 @@ export class Client {
     invariant(
       typeof this._private.M2_buf !== "undefined" &&
         equal(this._private.M2_buf, serverM2_buf),
-      "server is not authentic"
+      "M2 didn't check"
     );
   }
 

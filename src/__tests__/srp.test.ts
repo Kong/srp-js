@@ -1,7 +1,6 @@
-import * as assert from "assert";
 import { Client, computeVerifier, genKey, params as _params, Server } from "..";
 import { Buffer } from "node:buffer";
-import { describe, beforeAll, beforeEach, it } from "@jest/globals";
+import { describe, beforeAll, beforeEach, it, assert } from "vitest";
 
 const params = _params[4096];
 
@@ -11,11 +10,15 @@ const password = Buffer.from("password123");
 
 assert(params, "missing parameters");
 
-let client, server;
-let a, A;
-let b, B;
-let verifier;
-let S_client, S_server;
+let client: Client;
+let server: Server;
+let a: Buffer;
+let A: Buffer;
+let b: Buffer
+let B: Buffer;
+let verifier: Buffer;
+let S_client: Buffer;
+let S_server: Buffer;
 
 describe("SRP", () => {
   beforeAll(() => {
@@ -67,6 +70,7 @@ describe("SRP", () => {
 
     // server is authentic
     assert.doesNotThrow(() => {
+      if (!serverM2) throw new Error("M2 didn't check");
       client.checkM2(serverM2);
     }, "M2 didn't check");
   });
@@ -107,6 +111,7 @@ describe("SRP", () => {
 
     // server is authentic
     assert.doesNotThrow(() => {
+      if (!serverM2) throw new Error("M2 didn't check");
       client.checkM2(serverM2);
     }, "M2 didn't check");
   });
@@ -180,14 +185,12 @@ describe("SRP", () => {
     // client produces M1 now
     client.computeM1();
 
-    // server likes client's M1
-    var serverM2 = server.checkM1(client.computeM1());
-    // we tamper with the server's M2
-    serverM2 = serverM2 + "a";
+    // server likes client's M1 and we tamper with the server's M2
+    let serverM2 = server.checkM1(client.computeM1()) + "a" as unknown as Buffer;
 
     // client and server agree on K
-    var client_K = client.computeK();
-    var server_K = server.computeK();
+    const client_K = client.computeK();
+    const server_K = server.computeK();
     assert.equal(client_K.toString("hex"), server_K.toString("hex"));
 
     // server is NOT authentic

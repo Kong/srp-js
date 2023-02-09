@@ -1,7 +1,7 @@
-import * as assert from "assert";
 import { BigInteger } from "../bigInt";
-import { Client, computeVerifier, params as _params, Server } from "../";
-import { describe, it } from "@jest/globals";
+import { Client, computeVerifier, params as _params, Server } from "..";
+import { describe, it, assert } from "vitest";
+import { Params } from "../params";
 /*
  * Vectors from https://wiki.mozilla.org/Identity/AttachedServices/KeyServerProtocol
  *
@@ -11,13 +11,13 @@ import { describe, it } from "@jest/globals";
  * Note that P is the HKDF-stretched key, computed elsewhere.
  */
 
-function join(s) {
+function join(s: string) {
   return s.split(/\s/).join("");
 }
-function decimal(s) {
+function decimal(s: string) {
   return new BigInteger(join(s), 10).toBuffer();
 }
-function h(s) {
+function h(s: string) {
   return Buffer.from(join(s), "hex");
 }
 
@@ -288,16 +288,32 @@ const expected_4 = {
   M1: h("00cef66a047d506c bf941c236218e583 5343534ae08cf0cd 0fb7980bed242e05")
 };
 
-function hexequal(a, b, msg) {
+function hexequal(a: Buffer, b: Buffer, msg: string) {
   assert.equal(a.length, b.length, msg);
   assert.equal(a.toString("hex"), b.toString("hex"), msg);
 }
 
-function numequal(a, b, msg) {
+function numequal(a: BigInteger, b: BigInteger, msg: string) {
   assert(a.eq(b), msg);
 }
 
-function checkVectors(params, inputs, expected) {
+function checkVectors(params: Params, inputs: {
+  I: Buffer;
+  P: Buffer;
+  salt: Buffer;
+  a: Buffer;
+  b: Buffer;
+}, expected: {
+  k: Buffer;
+  x: Buffer;
+  v: Buffer;
+  B: Buffer;
+  A: Buffer;
+  u: Buffer;
+  S: Buffer;
+  K: Buffer;
+  M1: Buffer;
+}) {
   hexequal(
     inputs.I,
     Buffer.from("616e6472c3a9406578616d706c652e6f7267", "hex"),
@@ -332,14 +348,14 @@ function checkVectors(params, inputs, expected) {
   }, /incomplete protocol/);
 
   client.setB(expected.B);
-  numequal(client._private.u_num, BigInteger.fromBuffer(expected.u), "u");
-  hexequal(client._private.S_buf, expected.S, "S");
+  numequal(client._private.u_num as BigInteger, BigInteger.fromBuffer(expected.u), "u");
+  hexequal(client._private.S_buf as Buffer, expected.S, "S");
   hexequal(client.computeM1(), expected.M1, "M1");
   hexequal(client.computeK(), expected.K, "K");
 
   server.setA(expected.A);
-  numequal(server._private.u_num, BigInteger.fromBuffer(expected.u), "u");
-  hexequal(server._private.S_buf, expected.S, "S");
+  numequal(server._private.u_num as BigInteger, BigInteger.fromBuffer(expected.u), "u");
+  hexequal(server._private.S_buf as Buffer, expected.S, "S");
   assert.throws(function () {
     server.checkM1(Buffer.from("notM1"));
   }, /client did not use the same password/);

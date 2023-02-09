@@ -337,7 +337,7 @@ function _b64UrlToHex(s: string) {
  * @param salt hex representation of salt
  */
 async function _pbkdf2Passphrase(passphrase: string, salt: string) {
-  if (!window.crypto || !window.crypto.subtle) {
+  if (typeof window !== 'undefined' && (!window.crypto || !window.crypto.subtle)) {
     return pbkdf2PassphraseForge(passphrase, salt);
   }
 

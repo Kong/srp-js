@@ -20,7 +20,14 @@ function hex(s: string) {
   return new BigInteger(s.split(/\s/).join(""), 16);
 }
 
-const params = {
+export type Params = {
+  N_length_bits: number;
+  N: BigInteger;
+  g: BigInteger;
+  hash: "sha1" | "sha256" | "sha512";
+};
+
+const params: Record<string, Params> = {
   1024: {
     N_length_bits: 1024,
     N: hex(

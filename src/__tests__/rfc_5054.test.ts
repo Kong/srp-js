@@ -1,7 +1,7 @@
-import * as assert from "assert";
 import { Client, computeVerifier, params as _params, Server } from "..";
 import { Buffer } from "node:buffer";
-import { describe, it } from "@jest/globals";
+import { describe, it, assert } from "vitest";
+import { BigInteger } from "../bigInt";
 const params = _params["1024"];
 
 /*
@@ -60,7 +60,7 @@ const S_expected = (
   .split(/\s/)
   .join("");
 
-function asHex(num) {
+function asHex(num: BigInteger) {
   return num.toBuffer().toString("hex");
 }
 
@@ -94,7 +94,7 @@ describe("RFC 5054: Test vectors", () => {
   it("u", () => {
     const client = new Client(params, s, I, P, a);
     client.setB(Buffer.from(B_expected, "hex"));
-    assert.equal(asHex(client._private.u_num), u_expected);
+    assert.equal(asHex(client._private.u_num as BigInteger), u_expected);
   });
 
   it("S client", () => {
