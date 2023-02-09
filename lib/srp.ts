@@ -1,7 +1,6 @@
 import * as crypto from "crypto";
 import { BigInteger } from "./bigInt";
 import { Buffer } from "node:buffer";
-import params from "./params";
 
 const zero = new BigInteger(0);
 
@@ -299,55 +298,60 @@ function equal(buf1: Buffer, buf2: Buffer) {
   return mismatch === 0;
 }
 
-function Client(
-  params: Params,
-  salt_buf: Buffer,
-  identity_buf: Buffer,
-  password_buf: Buffer,
-  secret1_buf: Buffer
-) {
-  if (!(this instanceof Client)) {
-    // @ts-expect-error - FIXME
-    return new Client(
-      params,
-      salt_buf,
-      identity_buf,
-      password_buf,
-      secret1_buf
+export class Client {
+  _private: {
+    params: Params;
+    k_num: BigInteger;
+    x_num: BigInteger;
+    a_num: BigInteger;
+    u_num?: BigInteger;
+    A_buf: Buffer;
+    K_buf?: Buffer;
+    M1_buf?: Buffer;
+    M2_buf?: Buffer;
+    S_buf?: Buffer;
+  };
+
+  constructor(
+    params: Params,
+    salt_buf: Buffer,
+    identity_buf: Buffer,
+    password_buf: Buffer,
+    secret1_buf: Buffer
+  ) {
+    invariant(
+      Buffer.isBuffer(salt_buf),
+      "Type error: salt (salt) must be a buffer"
     );
+    invariant(
+      Buffer.isBuffer(identity_buf),
+      "Type error: identity (I) must be a buffer"
+    );
+    invariant(
+      Buffer.isBuffer(password_buf),
+      "Type error: password (P) must be a buffer"
+    );
+    invariant(
+      Buffer.isBuffer(secret1_buf),
+      "Type error: secret1 must be a buffer"
+    );
+
+    const a_num = BigInteger.fromBuffer(secret1_buf);
+
+    this._private = {
+      params: params,
+      k_num: getk(params),
+      x_num: getx(params, salt_buf, identity_buf, password_buf),
+      a_num,
+      A_buf: getA(params, a_num)
+    };
   }
 
-  invariant(
-    Buffer.isBuffer(salt_buf),
-    "Type error: salt (salt) must be a buffer"
-  );
-  invariant(
-    Buffer.isBuffer(identity_buf),
-    "Type error: identity (I) must be a buffer"
-  );
-  invariant(
-    Buffer.isBuffer(password_buf),
-    "Type error: password (P) must be a buffer"
-  );
-  invariant(
-    Buffer.isBuffer(secret1_buf),
-    "Type error: secret1 must be a buffer"
-  );
-
-  this._private = {
-    params: params,
-    k_num: getk(params),
-    x_num: getx(params, salt_buf, identity_buf, password_buf),
-    a_num: BigInteger.fromBuffer(secret1_buf)
-  };
-  this._private.A_buf = getA(params, this._private.a_num);
-}
-
-Client.prototype = {
-  computeA: function computeA() {
+  computeA() {
     return this._private.A_buf;
-  },
-  setB: function setB(B_buf) {
+  }
+
+  setB(B_buf: Buffer) {
     var p = this._private;
     var B_num = BigInteger.fromBuffer(B_buf);
     var u_num = getu(p.params, p.A_buf, B_buf);
@@ -357,79 +361,110 @@ Client.prototype = {
     p.M2_buf = getM2(p.params, p.A_buf, p.M1_buf, p.K_buf);
     p.u_num = u_num; // only for tests
     p.S_buf = S_buf; // only for tests
-  },
-  computeM1: function computeM1() {
-    if (this._private.M1_buf === undefined)
-      throw new Error("incomplete protocol");
+  }
+
+  computeM1() {
+    invariant(
+      typeof this._private.M1_buf !== "undefined",
+      "incomplete protocol"
+    );
+
     return this._private.M1_buf;
-  },
-  checkM2: function checkM2(serverM2_buf: Buffer) {
-    if (!equal(this._private.M2_buf, serverM2_buf))
-      throw new Error("server is not authentic");
-  },
-  computeK: function computeK() {
-    if (this._private.K_buf === undefined)
-      throw new Error("incomplete protocol");
+  }
+
+  checkM2(serverM2_buf: Buffer) {
+    invariant(
+      typeof this._private.M2_buf !== "undefined" &&
+        equal(this._private.M2_buf, serverM2_buf),
+      "server is not authentic"
+    );
+  }
+
+  computeK() {
+    invariant(
+      typeof this._private.K_buf !== "undefined",
+      "incomplete protocol"
+    );
+
     return this._private.K_buf;
   }
-};
-
-function Server(params: Params, verifier_buf: Buffer, secret2_buf: Buffer) {
-  if (!(this instanceof Server)) {
-    // @ts-expect-error - FIXME
-    return new Server(params, verifier_buf, secret2_buf);
-  }
-
-  invariant(
-    Buffer.isBuffer(verifier_buf),
-    "Type error: verifier must be a buffer"
-  );
-  invariant(
-    Buffer.isBuffer(secret2_buf),
-    "Type error: secret2 must be a buffer"
-  );
-
-  this._private = {
-    params: params,
-    k_num: getk(params),
-    b_num: BigInteger.fromBuffer(secret2_buf),
-    v_num: BigInteger.fromBuffer(verifier_buf)
-  };
-  this._private.B_buf = getB(
-    params,
-    this._private.k_num,
-    this._private.v_num,
-    this._private.b_num
-  );
 }
 
-Server.prototype = {
-  computeB: function computeB() {
+export class Server {
+  _private: {
+    params: Params;
+    k_num: BigInteger;
+    b_num: BigInteger;
+    v_num: BigInteger;
+    B_buf: Buffer;
+    u_num?: BigInteger;
+    A_buf?: Buffer;
+    K_buf?: Buffer;
+    M1_buf?: Buffer;
+    M2_buf?: Buffer;
+    S_buf?: Buffer;
+  };
+
+  constructor(params: Params, verifier_buf: Buffer, secret2_buf: Buffer) {
+    invariant(
+      Buffer.isBuffer(verifier_buf),
+      "Type error: verifier must be a buffer"
+    );
+    invariant(
+      Buffer.isBuffer(secret2_buf),
+      "Type error: secret2 must be a buffer"
+    );
+
+    const k_num = getk(params);
+    const b_num = BigInteger.fromBuffer(secret2_buf);
+    const v_num = BigInteger.fromBuffer(verifier_buf);
+
+    this._private = {
+      params: params,
+      k_num,
+      b_num,
+      v_num,
+      B_buf: getB(params, k_num, v_num, b_num)
+    };
+  }
+
+  computeB() {
     return this._private.B_buf;
-  },
-  setA: function setA(A_buf: Buffer) {
-    var p = this._private;
-    var A_num = BigInteger.fromBuffer(A_buf);
-    var u_num = getu(p.params, A_buf, p.B_buf);
-    var S_buf = server_getS(p.params, p.v_num, A_num, p.b_num, u_num);
+  }
+
+  setA(A_buf: Buffer) {
+    const p = this._private;
+    const A_num = BigInteger.fromBuffer(A_buf);
+    const u_num = getu(p.params, A_buf, p.B_buf);
+    const S_buf = server_getS(p.params, p.v_num, A_num, p.b_num, u_num);
     p.K_buf = getK(p.params, S_buf);
     p.M1_buf = getM1(p.params, A_buf, p.B_buf, S_buf);
     p.M2_buf = getM2(p.params, A_buf, p.M1_buf, p.K_buf);
     p.u_num = u_num; // only for tests
     p.S_buf = S_buf; // only for tests
-  },
-  checkM1: function checkM1(clientM1_buf: Buffer) {
-    if (this._private.M1_buf === undefined)
-      throw new Error("incomplete protocol");
-    if (!equal(this._private.M1_buf, clientM1_buf))
-      throw new Error("client did not use the same password");
+  }
+
+  checkM1(clientM1_buf: Buffer) {
+    invariant(
+      typeof this._private.M1_buf !== "undefined",
+      "incomplete protocol"
+    );
+    invariant(
+      equal(this._private.M1_buf, clientM1_buf),
+      "client did not use the same password"
+    );
+
     return this._private.M2_buf;
-  },
-  computeK: function computeK() {
-    if (this._private.K_buf === undefined)
-      throw new Error("incomplete protocol");
+  }
+
+  computeK() {
+    invariant(
+      typeof this._private.K_buf !== "undefined",
+      "incomplete protocol"
+    );
+
     return this._private.K_buf;
   }
-};
+}
 
-export { params, genKey, computeVerifier, Client, Server };
+export { genKey, computeVerifier };

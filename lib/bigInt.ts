@@ -1,6 +1,5 @@
 import { Buffer } from "buffer";
 import { BigInteger as _BigInteger } from "jsbn";
-
 export class BigInteger extends _BigInteger {
   bigNum = true;
 
@@ -21,7 +20,6 @@ export class BigInteger extends _BigInteger {
   bitLength() {
     return super.bitLength();
   }
-  oldAdd: (n: BigInteger) => BigInteger;
   mod(n: BigInteger) {
     return this.ensureBI(super.mod(this.ensureBI(n)));
   }
@@ -52,7 +50,7 @@ export class BigInteger extends _BigInteger {
   }
   ensureBI(n: BigInteger | _BigInteger | number) {
     if (n && typeof n === "object" && "bigNum" in n && n.bigNum) {
-      return n;
+      return n as BigInteger;
     }
 
     return new BigInteger(n.toString());

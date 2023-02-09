@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import { BigInteger } from "../bigInt";
-import * as srp from "../srp";
-import { describe, beforeAll, beforeEach, it } from "@jest/globals";
+import { Client, computeVerifier, params as _params, Server } from "../";
+import { describe, it } from "@jest/globals";
 /*
  * Vectors from https://wiki.mozilla.org/Identity/AttachedServices/KeyServerProtocol
  *
@@ -21,7 +21,7 @@ function h(s) {
   return Buffer.from(join(s), "hex");
 }
 
-const params = srp.params["2048"];
+const params = _params["2048"];
 
 /* inputs_1/expected_1 are the main PiCl test vectors. They were mechanically
  * generated to force certain derived values (stretched-password "P", v, A,
@@ -304,19 +304,14 @@ function checkVectors(params, inputs, expected) {
     "I"
   );
   hexequal(
-    srp.computeVerifier(params, inputs.salt, inputs.I, inputs.P),
+    computeVerifier(params, inputs.salt, inputs.I, inputs.P),
     expected.v,
     "v"
   );
 
-  var client = srp.Client(
-    params,
-    inputs.salt,
-    inputs.I,
-    inputs.P,
-    inputs.a
-  );
-  var server = srp.Server(params, expected.v, inputs.b);
+  const client = new Client(params, inputs.salt, inputs.I, inputs.P, inputs.a);
+
+  const server = new Server(params, expected.v, inputs.b);
 
   numequal(client._private.k_num, BigInteger.fromBuffer(expected.k), "k");
   numequal(client._private.x_num, BigInteger.fromBuffer(expected.x), "x");
@@ -348,7 +343,7 @@ function checkVectors(params, inputs, expected) {
   assert.throws(function () {
     server.checkM1(Buffer.from("notM1"));
   }, /client did not use the same password/);
-  server.checkM1(expected.M1); // happy, not throwy
+  server.checkM1(expected.M1);
   hexequal(server.computeK(), expected.K, "K");
 }
 

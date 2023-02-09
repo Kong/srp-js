@@ -1,8 +1,8 @@
 import * as assert from "assert";
-import * as srp from "../srp";
+import { Client, computeVerifier, params as _params, Server } from "..";
 import { Buffer } from "node:buffer";
 import { describe, it } from "@jest/globals";
-const params = srp.params["1024"];
+const params = _params["1024"];
 
 /*
  * http://tools.ietf.org/html/rfc5054#appendix-B
@@ -66,47 +66,47 @@ function asHex(num) {
 
 describe("RFC 5054: Test vectors", () => {
   it("x", () => {
-    const client = srp.Client(params, s, I, P, a);
+    const client = new Client(params, s, I, P, a);
     assert.equal(asHex(client._private.x_num), x_expected);
   });
 
   it("V", () => {
-    let verifier = srp.computeVerifier(params, s, I, P);
+    let verifier = computeVerifier(params, s, I, P);
     assert.equal(verifier.toString("hex"), v_expected);
   });
 
   it("k", () => {
-    const client = srp.Client(params, s, I, P, a);
+    const client = new Client(params, s, I, P, a);
     assert.equal(asHex(client._private.k_num), k_expected);
   });
 
   it("A", () => {
-    const client = srp.Client(params, s, I, P, a);
+    const client = new Client(params, s, I, P, a);
     assert.equal(client.computeA().toString("hex"), A_expected);
   });
 
   it("B", () => {
-    let verifier = srp.computeVerifier(params, s, I, P);
-    const server = srp.Server(params, verifier, b);
+    let verifier = computeVerifier(params, s, I, P);
+    const server = new Server(params, verifier, b);
     assert.equal(server.computeB().toString("hex"), B_expected);
   });
 
   it("u", () => {
-    const client = srp.Client(params, s, I, P, a);
+    const client = new Client(params, s, I, P, a);
     client.setB(Buffer.from(B_expected, "hex"));
     assert.equal(asHex(client._private.u_num), u_expected);
   });
 
   it("S client", () => {
-    const client = srp.Client(params, s, I, P, a);
+    const client = new Client(params, s, I, P, a);
     client.setB(Buffer.from(B_expected, "hex"));
-    assert.equal(client._private.S_buf.toString("hex"), S_expected);
+    assert.equal(client._private.S_buf?.toString("hex"), S_expected);
   });
 
   it("S server", () => {
-    let verifier = srp.computeVerifier(params, s, I, P);
-    const server = srp.Server(params, verifier, b);
+    let verifier = computeVerifier(params, s, I, P);
+    const server = new Server(params, verifier, b);
     server.setA(Buffer.from(A_expected, "hex"));
-    assert.equal(server._private.S_buf.toString("hex"), S_expected);
+    assert.equal(server._private.S_buf?.toString("hex"), S_expected);
   });
 });
