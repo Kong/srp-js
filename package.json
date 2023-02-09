@@ -2,11 +2,13 @@
   "name": "@getinsomnia/srp-js",
   "description": "Secure Remote Password (SRP)",
   "version": "0.3.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "jest"
-  },
+  "main": "dist/index.js",
   "module": "dist/index.js",
+  "scripts": {
+    "test": "jest",
+    "build": "vite build",
+    "type_check": "tsc --noEmit"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/getinsomnia/srp-js"
@@ -15,10 +17,15 @@
   "licence": "MIT",
   "readmeFilename": "README.md",
   "dependencies": {
-    "jsbn": "^1.1.0"
+    "@types/node-forge": "^1.3.1",
+    "jsbn": "^1.1.0",
+    "node-forge": "^1.3.1"
   },
   "devDependencies": {
     "jest": "^29.4.2",
-    "ts-jest": "^29.0.5"
+    "ts-jest": "^29.0.5",
+    "typescript": "^4.9.5",
+    "vite": "^4.1.1",
+    "vite-plugin-node-polyfills": "^0.7.0"
   }
 }
