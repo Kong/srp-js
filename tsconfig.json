@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "isolatedModules": true,
+    "lib": ["es2015", "dom"],
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "module": "ESNext",
+    "moduleResolution": "node"
+  },
+  "include": ["src"],
+  "exclude": ["**/node_modules"]
+}
