@@ -7,6 +7,7 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
       name: "insomnia-srp-client",
+      formats: ["es"],
       // the proper extensions will be added
       fileName: "index"
     },

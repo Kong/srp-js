@@ -3,3 +3,4 @@ export * from './sealedbox';
 export * from './box';
 export * from './hkdf';
 export * from './crypt';
+export { Buffer } from 'buffer';
