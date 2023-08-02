@@ -64,8 +64,11 @@ export function decryptRSAWithJWK(
     throw new Error("Private key is missing parameters");
   }
 
+  console.log({ E: privateJWK.e });
+
   const n = _b64UrlToBigInt(privateJWK.n);
   const e = _b64UrlToBigInt(privateJWK.e);
+  console.log({ e });
   const d = _b64UrlToBigInt(privateJWK.d);
   const p = _b64UrlToBigInt(privateJWK.p);
   const q = _b64UrlToBigInt(privateJWK.q);
@@ -76,8 +79,11 @@ export function decryptRSAWithJWK(
   // @ts-expect-error node-forge typings are incomplete
   const privateKey = forge.rsa.setPrivateKey(n, e, d, p, q, dP, dQ, qInv);
   const bytes = forge.util.hexToBytes(encryptedBlob);
+
+  const md = forge.md.sha256.create();
+  console.log({ md });
   const decrypted = privateKey.decrypt(bytes, "RSA-OAEP", {
-    md: forge.md.sha256.create()
+    md,
   });
 
   return decodeURIComponent(decrypted);
