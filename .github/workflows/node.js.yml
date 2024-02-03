@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    timeout-minutes: ${{ fromJSON(vars.GHA_DEFAULT_TIMEOUT) }}
     name: Run Tests
     runs-on: ubuntu-latest
     strategy:
