@@ -25,6 +25,13 @@ describe('crypt', () => {
       const resultDecrypted = decryptAES(key, resultEncrypted);
       expect(resultDecrypted).toEqual('Hello World!');
     });
+
+    it('rejects a truncated authentication tag', () => {
+      const key = 'fb058595c02ae9660ed7098273bf50e49407942ecc437bf317638d76c4578eae';
+      const message = encryptAES(key, 'Hello World!', 'additional data');
+      const truncated = { ...message, t: message.t.slice(0, 2) };
+      expect(() => decryptAES(key, truncated)).toThrow('Invalid AES-GCM tag length');
+    });
   });
 
   describe('AES Buffer', () => {

@@ -6,6 +6,7 @@ import { Buffer } from "buffer";
 
 const DEFAULT_BYTE_LENGTH = 32;
 const DEFAULT_PBKDF2_ITERATIONS = 1e5; // 100,000
+const AES_GCM_TAG_BITS = 128;
 
 /**
  * Generate hex signing key used for AES encryption
@@ -116,7 +117,7 @@ export function encryptAES(
   // Plaintext could contain weird unicode, so we have to encode that
   const encodedPlaintext = encodeURIComponent(plaintext);
 
-  cipher.start({ additionalData, iv, tagLength: 128 });
+  cipher.start({ additionalData, iv, tagLength: AES_GCM_TAG_BITS });
   cipher.update(forge.util.createBuffer(encodedPlaintext));
   cipher.finish();
 
@@ -151,9 +152,15 @@ export function decryptAES(jwkOrKey: string | JsonWebKey, message: AESMessage) {
   // ~~~~~~~~~~~~~~~~~~~~ //
   const decipher = forge.cipher.createDecipher("AES-GCM", key);
 
+  // The tag comes from the message, so do not trust its length. A short tag is
+  // easy to forge. encryptAES always uses a 128-bit tag.
+  if (message.t.length * 4 !== AES_GCM_TAG_BITS) {
+    throw new Error("Invalid AES-GCM tag length");
+  }
+
   decipher.start({
     iv: forge.util.hexToBytes(message.iv),
-    tagLength: message.t.length * 4,
+    tagLength: AES_GCM_TAG_BITS,
     // @ts-expect-error node-forge typings are incomplete
     tag: forge.util.hexToBytes(message.t),
     additionalData: forge.util.hexToBytes(message.ad)
